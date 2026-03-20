@@ -9,7 +9,11 @@
         button { padding: 15px 25px; margin: 10px; cursor: pointer; font-size: 18px; border-radius: 50px; border: none; }
         .play-btn { background: #1db954; color: white; min-width: 120px; }
         .nav-btn { background: #333; color: white; }
-        #player-container { display: none; } 
+        #player-container {
+			position: absolute;
+			top: -1000px; /* Joga o vídeo para fora da tela em vez de esconder */
+			opacity: 0.1; /* Mantém uma leve atividade para o navegador não "matar" o processo */
+		} 
     </style>
 </head>
 <body>
@@ -40,15 +44,21 @@
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
         function onYouTubeIframeAPIReady() {
-            player = new YT.Player('youtube-player', {
-                height: '0', width: '0',
-                videoId: playlist[indexAtual].id,
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        }
+			player = new YT.Player('youtube-player', {
+				height: '360',
+				width: '640',
+				videoId: playlist[indexAtual].id,
+				playerVars: { 
+					'origin': window.location.origin, // Identifica seu site para o YouTube
+					'playsinline': 1,
+					'enablejsapi': 1 
+				},
+				events: {
+					'onReady': onPlayerReady,
+					'onStateChange': onPlayerStateChange
+				}
+			});
+		}
 
         function onPlayerReady() {
             playerPronto = true; // Agora o player pode ser usado
