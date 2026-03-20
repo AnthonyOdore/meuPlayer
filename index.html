@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Tela de Bloqueio</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #121212; color: white; }
+        button { padding: 15px 25px; margin: 10px; cursor: pointer; font-size: 18px; border-radius: 50px; border: none; }
+        .play-btn { background: #1db954; color: white; min-width: 120px; }
+        .nav-btn { background: #333; color: white; }
+        #player-container { display: none; } 
+    </style>
+</head>
+<body>
+
+    <h2>Tocando Agora</h2>
+    <p id="musica-atual">Aguardando Player...</p>
+
+    <button class="nav-btn" onclick="anterior()">⏮ Anterior</button>
+    <button class="play-btn" id="btnPlayPause" onclick="alternarPlay()">▶ Play</button>
+    <button class="nav-btn" onclick="proximo()">⏭ Próximo</button>
+
+    <div id="player-container"><div id="youtube-player"></div></div>
+
+    <script>
+        const playlist = [
+            { id: 'xHnZjBIjG6c', title: 'Só Fé', artist: 'Grelo' },
+            { id: 'dQw4w9WgXcQ', title: 'Never Gonna Give You Up', artist: 'Rick Astley' }
+        ];
+
+        let indexAtual = 0;
+        let player;
+        let playerPronto = false; // Trava para evitar o erro de undefined
+
+        // Carrega API
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '0', width: '0',
+                videoId: playlist[indexAtual].id,
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady() {
+            playerPronto = true; // Agora o player pode ser usado
+            atualizarInterface();
+            configurarTelaDeBloqueio();
+        }
+
+        function onPlayerStateChange(event) {
+            const btn = document.getElementById('btnPlayPause');
+            if (event.data == YT.PlayerState.PLAYING) {
+                btn.innerText = "⏸ Pause";
+                atualizarMediaMetadata();
+            } else {
+                btn.innerText = "▶ Play";
+            }
+        }
+
+        function alternarPlay() {
+            if (!playerPronto) return alert("Aguarde o player carregar...");
+            
+            if (player.getPlayerState() == YT.PlayerState.PLAYING) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        }
+
+        function proximo() {
+            if (!playerPronto) return;
+            indexAtual = (indexAtual + 1) % playlist.length;
+            carregarMusica();
+        }
+
+        function anterior() {
+            if (!playerPronto) return;
+            indexAtual = (indexAtual - 1 + playlist.length) % playlist.length;
+            carregarMusica();
+        }
+
+        function carregarMusica() {
+            player.loadVideoById(playlist[indexAtual].id);
+            atualizarInterface();
+        }
+
+        function atualizarInterface() {
+            document.getElementById('musica-atual').innerText = 
+                `${playlist[indexAtual].artist} - ${playlist[indexAtual].title}`;
+        }
+
+        function configurarTelaDeBloqueio() {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.setActionHandler('play', () => player.playVideo());
+                navigator.mediaSession.setActionHandler('pause', () => player.pauseVideo());
+                navigator.mediaSession.setActionHandler('previoustrack', () => anterior());
+                navigator.mediaSession.setActionHandler('nexttrack', () => proximo());
+            }
+        }
+		
+        function atualizarMediaMetadata() {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: playlist[indexAtual].title,
+                    artist: playlist[indexAtual].artist,
+                    artwork: [{ src: `https://img.youtube.com{playlist[indexAtual].id}/maxresdefault.jpg`, sizes: '512x512', type: 'image/jpeg' }]
+                });
+            }
+        }
+    </script>
+</body>
+</html>
